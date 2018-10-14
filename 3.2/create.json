@@ -67,13 +67,13 @@
           "type": "Microsoft.Resources/deployments",
           "apiVersion": "2015-01-01",
           "dependsOn": [
-              "[concat('Microsoft.Resources/deployments/', 'myNick')]"
+              "[resourceId('Microsoft.Network/networkInterfaces','myNic')]"
           ],
           "properties": {
               "mode": "Incremental",
               "templateLink": {
                   "contentVersion": "1.0.0.0",
-                  "uri": ""
+                  "uri": "https://raw.githubusercontent.com/BlackDante/arm-workshop/master/3.2/shared/vm.json"
               },
               "parameters": {
                   "vm-name": { "value": "my-vm-name" },

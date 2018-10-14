@@ -27,9 +27,6 @@
             "type": "Microsoft.Compute/virtualMachines",
             "name": "myVM",
             "location": "[resourceGroup().location]",
-            "dependsOn": [
-              "[resourceId('Microsoft.Network/networkInterfaces/', 'myNic')]"
-            ],
             "properties": {
               "hardwareProfile": { "vmSize": "[variables('vm-size')]" },
               "osProfile": {
