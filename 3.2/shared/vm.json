@@ -25,7 +25,7 @@
         {
             "apiVersion": "2016-04-30-preview",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "myVM",
+            "name": "[parameters('vm-name')]",
             "location": "[resourceGroup().location]",
             "properties": {
               "hardwareProfile": { "vmSize": "[variables('vm-size')]" },

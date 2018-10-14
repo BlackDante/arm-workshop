@@ -7,12 +7,45 @@
     },
     "variables": {
       "vnetID": "[resourceId('Microsoft.Network/virtualNetworks','myVNet')]", 
-      "subnetRef": "[concat(variables('vnetID'),'/subnets/mySubnet')]",
-      "imagePublisher": "Canonical",
-      "imageOffer": "UbuntuServer",
-      "vmSize": "Standard_A1"
+      "subnetRef": "[concat(variables('vnetID'),'/subnets/mySubnet-1')]"
     },
     "resources": [
+        {
+            "name": "nsgName",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "AllowHttp",
+                        "properties": {
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "direction": "Inbound",
+                            "access": "Allow",
+                            "priority": 100,
+                            "protocol": "Tcp",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "80"
+                        }
+                    },
+                    {
+                        "name": "AllowSSH",
+                        "properties": {
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "direction": "Inbound",
+                            "access": "Allow",
+                            "priority": 200,
+                            "protocol": "Tcp",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "22"
+                        }
+                    }
+                ]
+            }
+        },
       {
         "apiVersion": "2016-03-30",
         "type": "Microsoft.Network/publicIPAddresses",
@@ -30,12 +63,20 @@
         "type": "Microsoft.Network/virtualNetworks",
         "name": "myVNet",
         "location": "[resourceGroup().location]",
+        "dependsOn": [
+            "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsgName')]"
+        ],
         "properties": {
           "addressSpace": { "addressPrefixes": [ "10.0.0.0/16" ] },
           "subnets": [
             {
-              "name": "mySubnet",
-              "properties": { "addressPrefix": "10.0.0.0/24" }
+              "name": "mySubnet-1",
+              "properties": { 
+                  "addressPrefix": "10.0.0.0/24",
+                  "networkSecurityGroup": {
+                      "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsgName')]"
+                  }
+               }
             }
           ]
         }
@@ -46,6 +87,7 @@
         "name": "myNic",
         "location": "[resourceGroup().location]",
         "dependsOn": [
+          "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsgName')]",
           "[resourceId('Microsoft.Network/publicIPAddresses/', 'myPublicIPAddress')]",
           "[resourceId('Microsoft.Network/virtualNetworks/', 'myVNet')]"
         ],
