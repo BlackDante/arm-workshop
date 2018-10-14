@@ -8,43 +8,23 @@
     "variables": {
       "vnetID": "[resourceId('Microsoft.Network/virtualNetworks','myVNet')]", 
       "subnetRef-1": "[concat(variables('vnetID'),'/subnets/mySubnet-1')]",
-      "subnetRef-2": "[concat(variables('vnetID'),'/subnets/mySubnet-2')]"
+      "subnetRef-2": "[concat(variables('vnetID'),'/subnets/mySubnet-2')]",
+      "nsg-name": "nsg-name"
     },
     "resources": [
         {
-            "name": "nsgName",
-            "type": "Microsoft.Network/networkSecurityGroups",
-            "apiVersion": "2018-08-01",
-            "location": "[resourceGroup().location]",
+            "name": "nsg-deploy",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
             "properties": {
-                "securityRules": [
-                    {
-                        "name": "AllowHttp",
-                        "properties": {
-                            "sourceAddressPrefix": "*",
-                            "sourcePortRange": "*",
-                            "direction": "Inbound",
-                            "access": "Allow",
-                            "priority": 100,
-                            "protocol": "Tcp",
-                            "destinationAddressPrefix": "*",
-                            "destinationPortRange": "80"
-                        }
-                    },
-                    {
-                        "name": "AllowSSH",
-                        "properties": {
-                            "sourceAddressPrefix": "*",
-                            "sourcePortRange": "*",
-                            "direction": "Inbound",
-                            "access": "Allow",
-                            "priority": 200,
-                            "protocol": "Tcp",
-                            "destinationAddressPrefix": "*",
-                            "destinationPortRange": "22"
-                        }
-                    }
-                ]
+                "mode": "Incremental",
+                "templateLink": {
+                    "contentVersion": "1.0.0.0",
+                    "uri": "https://raw.githubusercontent.com/BlackDante/arm-workshop/master/3.2/shared/nsg.json"
+                },
+                "parameters": {
+                    "nsg-name": {"value": "[variables('nsg-name')]"}
+                }
             }
         },
       {
@@ -77,7 +57,7 @@
         "name": "myVNet",
         "location": "[resourceGroup().location]",
         "dependsOn": [
-            "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsgName')]"
+            "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg-name'))]"
         ],
         "properties": {
           "addressSpace": { "addressPrefixes": [ "10.0.0.0/16" ] },
@@ -87,7 +67,7 @@
               "properties": { 
                   "addressPrefix": "10.0.0.0/24",
                   "networkSecurityGroup": {
-                      "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsgName')]"
+                      "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg-name'))]"
                   }
                }
             },
@@ -96,7 +76,7 @@
                 "properties": {
                     "addressPrefix": "10.0.1.0/24",
                     "networkSecurityGroup": {
-                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsgName')]"
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg-name'))]"
                     }
                 }
             }
@@ -109,7 +89,6 @@
         "name": "myNic-1",
         "location": "[resourceGroup().location]",
         "dependsOn": [
-          "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsgName')]",
           "[resourceId('Microsoft.Network/publicIPAddresses/', 'myPublicIPAddress-1')]",
           "[resourceId('Microsoft.Network/virtualNetworks/', 'myVNet')]"
         ],
@@ -132,7 +111,6 @@
         "name": "myNic-2",
         "location": "[resourceGroup().location]",
         "dependsOn": [
-          "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsgName')]",
           "[resourceId('Microsoft.Network/publicIPAddresses/', 'myPublicIPAddress-2')]",
           "[resourceId('Microsoft.Network/virtualNetworks/', 'myVNet')]"
         ],
