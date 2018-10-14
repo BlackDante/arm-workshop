@@ -81,7 +81,40 @@ W przypadku ekspancji na świat, skróty regionów wyglądały by następująco
 
 `<prefix>-vnet-<nazwa>`
 
+- Maksymalna długosc: 50
+
 ##### Podsieci
+
+`<prefix>-subnet-[index]-<nazwa>`
+
+- Maksymalna długosc: 80
 
 ##### Karty Sieciowe
 
+`<prefix>-<vmname>-nic-<nazwa>`
+
+- Maksymalna długosc: 80
+
+##### Sieciowe grupy zanezpieczeń
+
+`<prefix>-nsg-<nazwa>`
+
+- Maksymalna długosc: 80
+
+##### Dyski
+
+`<prefix>-<vmname>-disk`
+
+- Maksymalna długosc: 24
+
+##### Konta Składowania danych
+
+`<prefix>-sa-<name>`
+
+- Maksymalna długosc: 24
+
+##### Publiczne IP
+
+`<prefix>-pip-<name>`
+
+- Maksymalna długosc: 80

@@ -6,10 +6,14 @@
       "admin-password": { "type": "securestring" }
     },
     "variables": {
-      "vnetID": "[resourceId('Microsoft.Network/virtualNetworks','myVNet')]", 
-      "subnetRef-1": "[concat(variables('vnetID'),'/subnets/mySubnet-1')]",
-      "subnetRef-2": "[concat(variables('vnetID'),'/subnets/mySubnet-2')]",
-      "nsg-name": "nsg-name"
+      "vnetID": "[resourceId('Microsoft.Network/virtualNetworks','tyg3-vnet-default')]", 
+      "subnetRef-1": "[concat(variables('vnetID'),'/subnets/tyg3-subnet-1-vm1')]",
+      "subnetRef-2": "[concat(variables('vnetID'),'/subnets/tyg3-subnet-2-vm2')]",
+      "nsg-name": "tyg3-nsg-default",
+      "vmname-1": "tyg3-vm-1-ubuntu",
+      "vmname-2": "tyg3-vm-2-ubuntu",
+      "nicname-1": "[concat('tyg3-', variables('vmname-1'), 'nick-default')]",
+      "nicname-2": "[concat('tyg3-', variables('vmname-2'), 'nick-default')]"
     },
     "resources": [
         {
@@ -30,7 +34,7 @@
       {
         "apiVersion": "2016-03-30",
         "type": "Microsoft.Network/publicIPAddresses",
-        "name": "myPublicIPAddress-1",
+        "name": "tyg3-pip-vm1ip",
         "location": "[resourceGroup().location]",
         "properties": {
           "publicIPAllocationMethod": "Dynamic",
@@ -42,7 +46,7 @@
       {
         "apiVersion": "2016-03-30",
         "type": "Microsoft.Network/publicIPAddresses",
-        "name": "myPublicIPAddress-2",
+        "name": "tyg3-pip-vm2ip",
         "location": "[resourceGroup().location]",
         "properties": {
           "publicIPAllocationMethod": "Dynamic",
@@ -54,16 +58,16 @@
       {
         "apiVersion": "2016-03-30",
         "type": "Microsoft.Network/virtualNetworks",
-        "name": "myVNet",
+        "name": "tyg3-vnet-default",
         "location": "[resourceGroup().location]",
         "dependsOn": [
-            "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg-name'))]"
+            "[concat('Microsoft.Resources/deployments/','nsg-deploy')]"
         ],
         "properties": {
           "addressSpace": { "addressPrefixes": [ "10.0.0.0/16" ] },
           "subnets": [
             {
-              "name": "mySubnet-1",
+              "name": "tyg3-subnet-1-vm1",
               "properties": { 
                   "addressPrefix": "10.0.0.0/24",
                   "networkSecurityGroup": {
@@ -72,7 +76,7 @@
                }
             },
             {
-                "name": "mySubnet-2",
+                "name": "tyg3-subnet-2-vm2",
                 "properties": {
                     "addressPrefix": "10.0.1.0/24",
                     "networkSecurityGroup": {
@@ -86,11 +90,11 @@
       {
         "apiVersion": "2016-03-30",
         "type": "Microsoft.Network/networkInterfaces",
-        "name": "myNic-1",
+        "name": "[variables('nicname-1')]",
         "location": "[resourceGroup().location]",
         "dependsOn": [
-          "[resourceId('Microsoft.Network/publicIPAddresses/', 'myPublicIPAddress-1')]",
-          "[resourceId('Microsoft.Network/virtualNetworks/', 'myVNet')]"
+          "[resourceId('Microsoft.Network/publicIPAddresses/', 'tyg3-pip-vm1ip')]",
+          "[resourceId('Microsoft.Network/virtualNetworks/', 'tyg3-vnet-default')]"
         ],
         "properties": {
           "ipConfigurations": [
@@ -98,7 +102,7 @@
               "name": "ipconfig1",
               "properties": {
                 "privateIPAllocationMethod": "Dynamic",
-                "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses','myPublicIPAddress-1')]" },
+                "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses','tyg3-pip-vm1ip')]" },
                 "subnet": { "id": "[variables('subnetRef-1')]" }
               }
             }
@@ -108,11 +112,11 @@
       {
         "apiVersion": "2016-03-30",
         "type": "Microsoft.Network/networkInterfaces",
-        "name": "myNic-2",
+        "name": "[variables('nicname-2')]",
         "location": "[resourceGroup().location]",
         "dependsOn": [
-          "[resourceId('Microsoft.Network/publicIPAddresses/', 'myPublicIPAddress-2')]",
-          "[resourceId('Microsoft.Network/virtualNetworks/', 'myVNet')]"
+          "[resourceId('Microsoft.Network/publicIPAddresses/', 'tyg3-pip-vm2ip')]",
+          "[resourceId('Microsoft.Network/virtualNetworks/', 'tyg3-vnet-default')]"
         ],
         "properties": {
           "ipConfigurations": [
@@ -120,7 +124,7 @@
               "name": "ipconfig2",
               "properties": {
                 "privateIPAllocationMethod": "Dynamic",
-                "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses','myPublicIPAddress-2')]" },
+                "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses','tyg3-pip-vm2ip')]" },
                 "subnet": { "id": "[variables('subnetRef-2')]" }
               }
             }
@@ -132,7 +136,7 @@
           "type": "Microsoft.Resources/deployments",
           "apiVersion": "2015-01-01",
           "dependsOn": [
-              "[resourceId('Microsoft.Network/networkInterfaces','myNic-1')]"
+              "[resourceId('Microsoft.Network/networkInterfaces',variables('nicname-1'))]"
           ],
           "properties": {
               "mode": "Incremental",
@@ -141,10 +145,10 @@
                   "uri": "https://raw.githubusercontent.com/BlackDante/arm-workshop/master/3.2/shared/vm.json"
               },
               "parameters": {
-                  "vm-name": { "value": "my-vm-name" },
+                  "vm-name": { "value": "[variables('vmname-1')]" },
                   "admin-username": { "value": "[parameters('admin-username')]" },
                   "admin-password": { "value": "[parameters('admin-password')]" },
-                  "vm-nic": { "value": "[resourceId('Microsoft.Network/networkInterfaces','myNic-1')]" }
+                  "vm-nic": { "value": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicname-1'))]" }
               }
           }
       },
@@ -153,7 +157,7 @@
         "type": "Microsoft.Resources/deployments",
         "apiVersion": "2015-01-01",
         "dependsOn": [
-            "[resourceId('Microsoft.Network/networkInterfaces','myNic-1')]"
+            "[resourceId('Microsoft.Network/networkInterfaces',variables('nicname-2'))]"
         ],
         "properties": {
             "mode": "Incremental",
@@ -162,10 +166,10 @@
                 "uri": "https://raw.githubusercontent.com/BlackDante/arm-workshop/master/3.2/shared/vm.json"
             },
             "parameters": {
-                "vm-name": { "value": "my-vm-name-2" },
+                "vm-name": { "value": "[variables('vmname-2')]" },
                 "admin-username": { "value": "[parameters('admin-username')]" },
                 "admin-password": { "value": "[parameters('admin-password')]" },
-                "vm-nic": { "value": "[resourceId('Microsoft.Network/networkInterfaces','myNic-2')]" }
+                "vm-nic": { "value": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicname-2'))]" }
             }
         }
     }
