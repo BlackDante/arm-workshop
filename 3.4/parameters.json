@@ -1,0 +1,22 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "admin-username": { 
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/<sub_id>/resourceGroups/tyg3-rg-we-global-dev/providers/Microsoft.KeyVault/vaults/lab-key-vault"
+                },
+                "secretName": "admin-username"
+            }
+         },
+        "admin-password": { 
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/<sub_id>/resourceGroups/tyg3-rg-we-global-dev/providers/Microsoft.KeyVault/vaults/lab-key-vault"
+                },
+                "secretName": "admin-password"
+            } 
+        }
+    }
+  }
