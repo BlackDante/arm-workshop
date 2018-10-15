@@ -1,0 +1,147 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "admin-username": { "type": "string" },
+      "admin-password": { "type": "securestring" }
+    },
+    "variables": {
+      "vnetID": "[resourceId('Microsoft.Network/virtualNetworks','tyg3-vnet-default')]", 
+      "subnetRef-1": "[concat(variables('vnetID'),'/subnets/tyg3-subnet-1-vm1')]",
+      "subnetRef-2": "[concat(variables('vnetID'),'/subnets/tyg3-subnet-2-vm2')]",
+      "nsg-name": "tyg3-nsg-default",
+      "vmname-1": "tyg3-vm-1-ubuntu",
+      "vmname-2": "tyg3-vm-2-ubuntu",
+      "nicname-1": "[concat('tyg3-', variables('vmname-1'), 'nick-default')]",
+      "nicname-2": "[concat('tyg3-', variables('vmname-2'), 'nick-default')]"
+    },
+    "resources": [
+        {
+            "name": "nsg-deploy",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "contentVersion": "1.0.0.0",
+                    "uri": "https://raw.githubusercontent.com/BlackDante/arm-workshop/master/3.2/shared/nsg.json"
+                },
+                "parameters": {
+                    "nsg-name": {"value": "[variables('nsg-name')]"}
+                }
+            }
+        },
+      {
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "tyg3-pip-vm1ip",
+        "location": "[resourceGroup().location]",
+        "properties": {
+          "publicIPAllocationMethod": "Dynamic",
+          "dnsSettings": {
+            "domainNameLabel": "tyg3-rg-we-dns-1"
+          }
+        }
+      },
+      {
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "tyg3-pip-vm2ip",
+        "location": "[resourceGroup().location]",
+        "properties": {
+          "publicIPAllocationMethod": "Dynamic",
+          "dnsSettings": {
+            "domainNameLabel": "tyg3-rg-we-dns-2"
+          }
+        }
+      },
+      {
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/virtualNetworks",
+        "name": "tyg3-vnet-default",
+        "location": "[resourceGroup().location]",
+        "dependsOn": [
+            "[concat('Microsoft.Resources/deployments/','nsg-deploy')]"
+        ],
+        "properties": {
+          "addressSpace": { "addressPrefixes": [ "10.0.0.0/16" ] },
+          "subnets": [
+            {
+              "name": "tyg3-subnet-1-vm1",
+              "properties": { 
+                  "addressPrefix": "10.0.0.0/24",
+                  "networkSecurityGroup": {
+                      "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg-name'))]"
+                  }
+               }
+            },
+            {
+                "name": "tyg3-subnet-2-vm2",
+                "properties": {
+                    "addressPrefix": "10.0.1.0/24",
+                    "networkSecurityGroup": {
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg-name'))]"
+                    }
+                }
+            }
+          ]
+        }
+      },
+      {
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[variables(concat('nicname-', copyIndex(1)))]",
+        "location": "[resourceGroup().location]",
+        "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks/', 'tyg3-vnet-default')]",
+            "[resourceId('Microsoft.Network/publicIPAddresses/', concat('tyg3-pip-vm', copyIndex(1), 'ip'))]"
+        ],
+        "properties": {
+            "ipConfigurations": [
+              {
+                "name": "[concat('ipconfig', copyIndex(1))]",
+                "properties": {
+                  "privateIPAllocationMethod": "Dynamic",
+                  "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses/', concat('tyg3-pip-vm', copyIndex(1), 'ip'))]" },
+                  "subnet": { "id": "[variables(concat('subnetRef-', copyIndex(1)))]" }
+                }
+              }
+            ]
+          },
+          "copy":{
+              "name": "nic-copy",
+              "count": 2,
+              "mode": "Serial",
+              "batchSize": 1
+          }
+      },
+      {
+          "apiVersion": "2015-01-01",
+          "type": "Microsoft.Resources/deployments",
+          "name": "[concat('vm-deploy-', copyIndex())]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Network/networkInterfaces',variables('nicname-1'))]",
+            "[resourceId('Microsoft.Network/networkInterfaces',variables('nicname-2'))]"
+         ],
+          "properties": {
+            "mode": "Incremental",
+            "templateLink": {
+                "contentVersion": "1.0.0.0",
+                "uri": "https://raw.githubusercontent.com/BlackDante/arm-workshop/master/3.2/shared/vm.json"
+            },
+            "parameters": {
+                "vm-name": { "value": "[variables(concat('vmname-', copyIndex(1)))]" },
+                "admin-username": { "value": "[parameters('admin-username')]" },
+                "admin-password": { "value": "[parameters('admin-password')]" },
+                "vm-nic": { "value": "[resourceId('Microsoft.Network/networkInterfaces',variables(concat('nicname-', copyIndex(1))))]" }
+            }
+        },
+        "copy": {
+            "name": "vm-copy",
+            "count": 2,
+            "mode": "serial",
+            "batchSize": 2
+        }
+      }
+    ]
+  }
